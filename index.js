@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 // Route imports
 const authRoute = require('./src/routes/auth.route');
 const userRoute = require('./src/routes/user.route');
-// const postRoute = require('./src/routes/post.route');
+const postRoute = require('./src/routes/post.route');
 
 // Load environment variables
 dotenv.config();
@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/auth', authRoute);
 app.use('/api/users', userRoute);
-// app.use('/api/posts', postRoute);
+app.use('/api/posts', postRoute);
 
 const PORT = process.env.PORT || 5200;
 app.listen(PORT, () => {
