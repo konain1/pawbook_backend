@@ -10,6 +10,7 @@ const {
     likePost,
     addComment,
     deletePost,
+    updatePost,
 } = require('../controllers/post.controller');
 
 // All routes are protected
@@ -20,5 +21,6 @@ router.get('/user/:userId', verifyToken, getPostsByUser);
 router.put('/:id/like', verifyToken, likePost);
 router.post('/:id/comment', verifyToken, addComment);
 router.delete('/:id', verifyToken, deletePost);
+router.put('/:id', verifyToken, upload.single('image'), updatePost);
 
 module.exports = router;

@@ -144,5 +144,37 @@ const deletePost = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
+// PUT /api/posts/:id — Update a post (caption and/or image)
+const updatePost = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ message: 'Post not found' });
 
-module.exports = { createPost, getAllPosts, getPostById, getPostsByUser, likePost, addComment, deletePost };
+        if (post.user.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized to update this post' });
+        }
+
+        const { caption } = req.body;
+
+        // Update caption
+        if (caption !== undefined) post.caption = caption;
+
+        // Update image if new file uploaded
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            post.image = result.secure_url;
+        }
+
+        await post.save();
+
+        const updatedPost = await Post.findById(req.params.id)
+            .populate('user', '-password')
+            .populate('comments.user', '-password');
+
+        res.json(updatedPost);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+module.exports = { createPost, getAllPosts, getPostById, getPostsByUser, likePost, addComment, deletePost, updatePost };
