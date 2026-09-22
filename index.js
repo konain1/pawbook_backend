@@ -8,6 +8,7 @@ const authRoute = require('./src/routes/auth.route');
 const userRoute = require('./src/routes/user.route');
 const postRoute = require('./src/routes/post.route');
 const profileRoute = require('./src/routes/profile.route');
+const friendRoute = require('./src/routes/friend.route');
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoute);
 app.use('/api/users', userRoute);
 app.use('/api/posts', postRoute);
 app.use('/api/profile', profileRoute);
+app.use('/api/friends', friendRoute);
 
 const PORT = process.env.PORT || 5200;
 app.listen(PORT, () => {
