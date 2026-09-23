@@ -31,8 +31,24 @@ const setupSocket = (io) => {
         // Join personal room for receiving messages
         socket.join(userId);
 
+        // Socket rate limiting
+        const rateLimits = new Map();
+        const checkRateLimit = (event, maxPerMinute) => {
+            const now = Date.now();
+            if (!rateLimits.has(event)) rateLimits.set(event, []);
+            const timestamps = rateLimits.get(event).filter(t => now - t < 60000);
+            rateLimits.set(event, timestamps);
+            if (timestamps.length >= maxPerMinute) {
+                socket.emit('rateLimited', { message: `Too many ${event} events, slow down.` });
+                return false;
+            }
+            timestamps.push(now);
+            return true;
+        };
+
         // Send message in real-time
         socket.on('sendMessage', async (data) => {
+            if (!checkRateLimit('sendMessage', 30)) return;
             try {
                 const { receiverId, text } = data;
 
@@ -66,15 +82,18 @@ const setupSocket = (io) => {
 
         // Typing indicator
         socket.on('typing', (receiverId) => {
+            if (!checkRateLimit('typing', 60)) return;
             io.to(receiverId).emit('userTyping', { userId });
         });
 
         socket.on('stopTyping', (receiverId) => {
+            if (!checkRateLimit('stopTyping', 60)) return;
             io.to(receiverId).emit('userStopTyping', { userId });
         });
 
         // Mark messages as read
         socket.on('markRead', async (senderId) => {
+            if (!checkRateLimit('markRead', 30)) return;
             await Message.updateMany(
                 { sender: senderId, receiver: userId, read: false },
                 { read: true }

@@ -39,6 +39,10 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Rate limiting
+const { apiLimiter, authLimiter, chatLimiter, postLimiter, friendLimiter } = require('./src/middlewares/rateLimiter');
+app.use('/api', apiLimiter);
+
 // MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
@@ -50,13 +54,13 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'Pawbook API is running 🐾' });
 });
 
-// Routes
-app.use('/api/auth', authRoute);
+// Routes with specific rate limits
+app.use('/api/auth', authLimiter, authRoute);
 app.use('/api/users', userRoute);
-app.use('/api/posts', postRoute);
+app.use('/api/posts', postLimiter, postRoute);
 app.use('/api/profile', profileRoute);
-app.use('/api/friends', friendRoute);
-app.use('/api/chat', chatRoute);
+app.use('/api/friends', friendLimiter, friendRoute);
+app.use('/api/chat', chatLimiter, chatRoute);
 
 const PORT = process.env.PORT || 5200;
 server.listen(PORT, () => {
