@@ -57,9 +57,9 @@ app.get('/', (req, res) => {
 // Routes with specific rate limits
 app.use('/api/auth', authLimiter, authRoute);
 app.use('/api/users', userRoute);
-app.use('/api/posts', postLimiter, postRoute);
+app.use('/api/posts', postRoute);
 app.use('/api/profile', profileRoute);
-app.use('/api/friends', friendLimiter, friendRoute);
+app.use('/api/friends', friendRoute);
 app.use('/api/chat', chatLimiter, chatRoute);
 
 const PORT = process.env.PORT || 5200;

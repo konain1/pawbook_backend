@@ -8,7 +8,12 @@ const postSchema = new mongoose.Schema({
     comments: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         text: String,
-        createdAt: Date
+        createdAt: Date,
+        replies: [{
+            user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            text: String,
+            createdAt: Date,
+        }]
     }]
 }, { timestamps: true });
 

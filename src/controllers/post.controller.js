@@ -46,6 +46,7 @@ const getAllPosts = async (req, res) => {
         const posts = await Post.find()
             .populate('user', '-password')
             .populate('comments.user', '-password')
+            .populate('comments.replies.user', '-password')
             .sort({ createdAt: -1 });
 
         res.json(posts);
@@ -59,7 +60,8 @@ const getPostById = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id)
             .populate('user', '-password')
-            .populate('comments.user', '-password');
+            .populate('comments.user', '-password')
+            .populate('comments.replies.user', '-password');
 
         if (!post) return res.status(404).json({ message: 'Post not found' });
         res.json(post);
@@ -120,7 +122,8 @@ const addComment = async (req, res) => {
 
         const updatedPost = await Post.findById(req.params.id)
             .populate('user', '-password')
-            .populate('comments.user', '-password');
+            .populate('comments.user', '-password')
+            .populate('comments.replies.user', '-password');
 
         res.status(201).json(updatedPost);
     } catch (err) {
@@ -177,4 +180,35 @@ const updatePost = async (req, res) => {
     }
 };
 
-module.exports = { createPost, getAllPosts, getPostById, getPostsByUser, likePost, addComment, deletePost, updatePost };
+// POST /api/posts/:id/comment/:commentId/reply — Reply to a comment
+const replyToComment = async (req, res) => {
+    try {
+        const { text } = req.body;
+        if (!text) return res.status(400).json({ message: 'Reply text is required' });
+
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ message: 'Post not found' });
+
+        const comment = post.comments.id(req.params.commentId);
+        if (!comment) return res.status(404).json({ message: 'Comment not found' });
+
+        comment.replies.push({
+            user: req.user.id,
+            text,
+            createdAt: new Date(),
+        });
+
+        await post.save();
+
+        const updatedPost = await Post.findById(req.params.id)
+            .populate('user', '-password')
+            .populate('comments.user', '-password')
+            .populate('comments.replies.user', '-password');
+
+        res.status(201).json(updatedPost);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+module.exports = { createPost, getAllPosts, getPostById, getPostsByUser, likePost, addComment, replyToComment, deletePost, updatePost };
