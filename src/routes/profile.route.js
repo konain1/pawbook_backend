@@ -4,10 +4,10 @@ const verifyToken = require('../middlewares/verifyToken');
 const upload = require('../middlewares/upload');
 const { getProfile, updateProfile } = require('../controllers/profile.controller');
 
-// GET /api/profile — Get logged-in user's profile
+// GET /api/profile — get logged-in user's profile
 router.get('/', verifyToken, getProfile);
 
-// PUT /api/profile — Update profile (supports form-data with avatar file)
+// PUT /api/profile — uppdate profile 
 router.put('/', verifyToken, upload.single('avatar'), updateProfile);
 
 module.exports = router;
