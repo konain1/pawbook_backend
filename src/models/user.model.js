@@ -8,9 +8,10 @@ const userSchema = new mongoose.Schema({
     bio: String,
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     resetPasswordOtp: String,
     resetPasswordExpires: Date,
 }, { timestamps: true });
 
-const User = mongoose.model('User', userSchema)
-module.exports = User
+const User = mongoose.model('User', userSchema);
+module.exports = User;

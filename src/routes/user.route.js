@@ -59,6 +59,12 @@ router.put('/follow/:id', verifyToken, async (req, res) => {
         await currentUser.updateOne({ $push: { following: req.params.id } });
         await userToFollow.updateOne({ $push: { followers: req.user.id } });
 
+        // If mutual follow, also add to friends
+        if (userToFollow.following && userToFollow.following.some(id => id.toString() === req.user.id)) {
+            await currentUser.updateOne({ $addToSet: { friends: req.params.id } });
+            await userToFollow.updateOne({ $addToSet: { friends: req.user.id } });
+        }
+
         res.json({ message: 'Followed successfully' });
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
@@ -90,15 +96,19 @@ router.put('/unfollow/:id', verifyToken, async (req, res) => {
     }
 });
 
-// GET /api/users/search?q=keyword — Search users by username
+// GET /api/users/search?q=keyword — Search users by username (or get all users if query is empty)
 router.get('/search', verifyToken, async (req, res) => {
     try {
         const { q } = req.query;
-        if (!q) return res.status(400).json({ message: 'Search query is required' });
+        let queryObj = { _id: { $ne: req.user.id } };
+        if (q && q.trim()) {
+            queryObj.username = { $regex: q.trim(), $options: 'i' };
+        }
 
-        const users = await User.find({
-            username: { $regex: q, $options: 'i' },
-        }).select('-password').limit(20);
+        const users = await User.find(queryObj)
+            .select('-password')
+            .sort({ createdAt: -1 })
+            .limit(100);
 
         res.json(users);
     } catch (err) {
