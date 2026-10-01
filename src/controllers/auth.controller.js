@@ -81,4 +81,95 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+// POST /api/auth/forgot-password
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Please provide your email address' });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase().trim() });
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email' });
+        }
+
+        // Generate 6 digit numeric code
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // 10 minutes expiry
+        user.resetPasswordOtp = otp;
+        user.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        const { sendResetOtpEmail } = require('../config/nodemailer');
+        await sendResetOtpEmail(user.email, otp, user.username);
+
+        res.json({ message: 'Verification code sent to your email! Please check your inbox.' });
+    } catch (err) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ message: 'Failed to send verification code', error: err.message });
+    }
+};
+
+// POST /api/auth/verify-otp
+const verifyResetOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            return res.status(400).json({ message: 'Email and verification code are required' });
+        }
+
+        const user = await User.findOne({
+            email: email.toLowerCase().trim(),
+            resetPasswordOtp: otp.toString().trim(),
+            resetPasswordExpires: { $gt: new Date() },
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired verification code' });
+        }
+
+        res.json({ message: 'Verification code verified successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+// POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        }
+
+        const user = await User.findOne({
+            email: email.toLowerCase().trim(),
+            resetPasswordOtp: otp.toString().trim(),
+            resetPasswordExpires: { $gt: new Date() },
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired verification code' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        user.resetPasswordOtp = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ message: 'Password reset successfully! Please log in with your new password.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+module.exports = { register, login, forgotPassword, verifyResetOtp, resetPassword };
+
