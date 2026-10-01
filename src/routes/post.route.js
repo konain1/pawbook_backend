@@ -4,6 +4,9 @@ const verifyToken = require('../middlewares/verifyToken');
 const upload = require('../middlewares/upload');
 const {
     createPost,
+    sharePost,
+    getPostShares,
+    getPostLikes,
     getAllPosts,
     getPostById,
     getPostsByUser,
@@ -14,10 +17,11 @@ const {
     updatePost,
 } = require('../controllers/post.controller');
 
-const { postLimiter } = require('../middlewares/rateLimiter');
-
 // All routes are protected
-router.post('/', verifyToken, postLimiter, upload.single('image'), createPost);
+router.post('/', verifyToken, upload.single('image'), createPost);
+router.post('/:id/share', verifyToken, sharePost);
+router.get('/:id/shares', verifyToken, getPostShares);
+router.get('/:id/likes', verifyToken, getPostLikes);
 router.get('/', verifyToken, getAllPosts);
 router.get('/:id', verifyToken, getPostById);
 router.get('/user/:userId', verifyToken, getPostsByUser);

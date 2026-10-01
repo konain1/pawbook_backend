@@ -1,23 +1,28 @@
 const mongoose = require('mongoose');
 
-const friendRequestSchema = new mongoose.Schema({
+const friendRequestSchema = new mongoose.Schema(
+  {
     sender: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
     receiver: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
     status: {
-        type: String,
-        enum: ['pending', 'accepted', 'rejected'],
-        default: 'pending',
+      type: String,
+      enum: ['pending', 'accepted', 'rejected'],
+      default: 'pending',
     },
-}, { timestamps: true });
+  },
+  { timestamps: true }
+);
 
-// Prevent duplicate requests between same users
-friendRequestSchema.index({ sender: 1, receiver: 1 }, { unique: true });
+friendRequestSchema.index({ sender: 1, receiver: 1 });
+friendRequestSchema.index({ receiver: 1, status: 1 });
 
 const FriendRequest = mongoose.model('FriendRequest', friendRequestSchema);
 module.exports = FriendRequest;
